@@ -1,0 +1,56 @@
+version: '3.9'
+
+networks:
+  grafana_loki:
+
+services:
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - 3007:3000
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: zus-operator
+    volumes:
+      - ./datasource.yml:/etc/grafana/provisioning/datasources/datasource.yaml
+    restart: "always"
+    networks:
+      - grafana_loki
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+    restart: always
+    networks:
+      - grafana_loki
+
+  blackbox_exporter:
+    image: prom/blackbox-exporter:v0.19.0
+    volumes:
+      - ./blackbox-config.yml:/config/blackbox.yml
+    ports:
+      - "9115:9115"
+    command:
+      - '--config.file=/config/blackbox.yml'
+    restart: always
+    networks:
+      - grafana_loki
+
+  # alertmanager:
+  #   image: prom/alertmanager:latest
+  #   volumes:
+  #     - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+  #   command:
+  #     - '--config.file=/etc/alertmanager/alertmanager.yml'
+  #   ports:
+  #     - "9093:9093"
+  #   restart: always
+  #   networks:
+  #     - grafana_loki
+volumes:
+  prometheus_data:
